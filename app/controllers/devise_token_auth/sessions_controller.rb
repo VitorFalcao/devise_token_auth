@@ -31,12 +31,38 @@ module DeviseTokenAuth
 
       if @resource and valid_params?(field, q_value) and @resource.valid_password?(resource_params[:password]) and (!@resource.respond_to?(:active_for_authentication?) or @resource.active_for_authentication?)
         # create client id
+
         @client_id = SecureRandom.urlsafe_base64(nil, false)
         @token     = SecureRandom.urlsafe_base64(nil, false)
 
         @resource.tokens[@client_id] = {
           token: BCrypt::Password.create(@token),
           expiry: (Time.now + DeviseTokenAuth.token_lifespan).to_i
+        }
+        @resource.save
+
+        sign_in(:user, @resource, store: false, bypass: false)
+
+        yield @resource if block_given?
+
+        render_create_success
+      elsif resource_params[:image].present? and (!@resource.respond_to?(:active_for_authentication?) or @resource.active_for_authentication?)
+
+        id = Operator.get_operator_by_biometry(resource_params[:image])
+
+        if id == -1
+          render_create_error_bad_credentials
+          return
+        end
+
+        @resource = Operator.where(id: id).first
+
+        @client_id = SecureRandom.urlsafe_base64(nil, false)
+        @token     = SecureRandom.urlsafe_base64(nil, false)
+
+        @resource.tokens[@client_id] = {
+            token: BCrypt::Password.create(@token),
+            expiry: (Time.now + DeviseTokenAuth.token_lifespan).to_i
         }
         @resource.save
 
@@ -141,7 +167,7 @@ module DeviseTokenAuth
     private
 
     def resource_params
-      params.permit(*params_for_resource(:sign_in))
+      params.permit(*params_for_resource(:sign_in), :image)
     end
 
   end
