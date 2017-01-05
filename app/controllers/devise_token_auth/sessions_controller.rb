@@ -15,7 +15,7 @@ module DeviseTokenAuth
       @resource = nil
       if field
         q_value = resource_params[field]
-
+        puts field
         if resource_class.case_insensitive_keys.include?(field)
           q_value.downcase!
         end
