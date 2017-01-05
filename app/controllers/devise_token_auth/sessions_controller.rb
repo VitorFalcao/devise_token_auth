@@ -37,7 +37,7 @@ module DeviseTokenAuth
 
         @resource.tokens[@client_id] = {
           token: BCrypt::Password.create(@token),
-          expiry: (Time.new.end_of_day - 4.hours).to_i
+          expiry: (Time.new.end_of_day - 2.hours).to_i
         }
         @resource.save
 
